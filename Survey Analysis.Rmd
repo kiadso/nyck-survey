@@ -1,7 +1,6 @@
 ---
 title: "American Nyckelharpa Association 2021 Survey Analysis"
 author: "Genelle Denzin"
-date: "1/16/2022"
 output: 
   html_document:
     theme: cosmo
@@ -11,6 +10,8 @@ editor_options:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
+
+# for reproducibility, please create a data directory containing both the member and general survey files in your project
 
 library(tidyverse)
 library(lubridate)
@@ -469,7 +470,10 @@ dancing <- "Playing for dancing"
 maintenance <- "Maintenance for your nyckelharpa"
 beginners <- "Getting started with the nyckelharpa for beginners"
 harmonies <- "Playing harmonies"
-
+workshop_type_count <- workshop %>%
+  select(VirtualWorkshopTypes) %>%
+  filter(!is.na(VirtualWorkshopTypes)) %>%
+  nrow()
 workshop_types <- workshop %>%
   select(VirtualWorkshopTypes) %>%
   filter(!is.na(VirtualWorkshopTypes)) %>%
@@ -490,11 +494,37 @@ workshop_types <- workshop %>%
         VirtualWorkshopTypes
     )
   ) %>%
-  adorn_totals("row") %>%
-  select(-VirtualWorkshopTypes, -Other)
+  select(-VirtualWorkshopTypes, -Other) %>%
+  map_dbl(., sum) %>%
+  bind_rows() %>%
+  pivot_longer(cols = everything(),
+               names_to = "Topics") %>%
+  arrange(desc(value))
 
-gt(workshop_types)
-  
+workshop_types %>%
+  mutate(Topics = fct_reorder(Topics, desc(value))) %>%
+  ggplot(aes(x = Topics, y = value, fill = Topics)) +
+  geom_col() +
+  theme_minimal() +
+  labs(
+    title = "Workshop Interest",
+    subtitle = paste(workshop_type_count,
+                     "respondents selected multiple topics"),
+    x = "",
+    y = ""
+  ) +
+  geom_hline(aes(yintercept = workshop_type_count + 2)) +
+  scale_fill_viridis(discrete = TRUE) +
+  geom_label(
+    label = paste(workshop_type_count, "respondents"),
+    x = 4.1,
+    y = workshop_type_count + 1,
+    label.padding = unit(0.25, "lines"),
+    label.size = 0.25,
+    color = "black",
+    fill = "#5DC863FF"
+  )
+
 ```
 <br>
 ^ Preliminary, will make this better soon
