@@ -1,0 +1,506 @@
+---
+title: "American Nyckelharpa Association 2021 Survey Analysis"
+author: "Genelle Denzin"
+date: "1/16/2022"
+output: 
+  html_document:
+    theme: cosmo
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(tidyverse)
+library(lubridate)
+library(ggplot2)
+library(janitor)
+library(tidytext)
+library(here)
+library(viridis)
+library(scales)
+library(gt)
+
+source(here("survey.R"))
+
+member_responses <- member %>% nrow()
+general_responses <- general %>% nrow()
+
+```
+
+## American Nyckelharpa Association Annual Survey
+
+Hi if you participated in this survey, you will be interested to see some results! The member survey had `r member_responses` respondents and the general one had `r general_responses`, for a total of `r member_responses + general_responses` responses. We are excited to share with you some interesting insights!
+
+### Instrument Types
+
+```{r interests}
+interests <- rbind(
+  general %>%
+    select(
+      Experience,
+      StyleAndType,
+      Faves,
+      InterestInSwedish,
+      InterestInUppland,
+      SurveyType
+    ),
+  member %>%
+    select(
+      Experience,
+      StyleAndType,
+      Faves,
+      InterestInSwedish,
+      InterestInUppland,
+      SurveyType
+    )
+) %>% unique()
+
+
+instrument_type <- interests %>%
+  mutate(
+    Type = case_when(
+      str_detect(tolower(StyleAndType), "row or 4") == TRUE ~ "Not specified",
+      (str_detect(tolower(StyleAndType), "3") |
+        str_detect(tolower(StyleAndType), "three")) &
+        str_detect(tolower(StyleAndType), "4") == TRUE ~ "Both or Multiple",
+      str_detect(tolower(StyleAndType), "3 row") == TRUE ~ "3 row",
+      str_detect(tolower(StyleAndType), "3-row") == TRUE ~ "3 row",
+      str_detect(tolower(StyleAndType), "3row") == TRUE ~ "3 row",
+      str_detect(tolower(StyleAndType), "three") == TRUE ~ "3 row",
+      str_detect(tolower(StyleAndType), "4 row") == TRUE ~ "4 row",
+      str_detect(tolower(StyleAndType), "4-row") == TRUE ~ "4 row",
+      TRUE ~ "Not specified"
+    )
+  ) %>%
+  filter(Type != "Not specified") %>%
+  count(SurveyType, Type)
+```
+
+A total of `r instrument_type %>% filter(Type == "3 row") %>% summarise(t = sum(n)) %>% pull(t)`, or `r percent(instrument_type %>% filter(Type == "3 row") %>% summarise(t = sum(n)) %>% pull(t)/ instrument_type %>% summarise(t = sum(n)) %>% pull(t))` of respondents are working with a 3-row nyckelharpa, and we did find a difference in how that differs from ANA members and non-members, with more members having 4-row and multiple types of harpas than respondents who were not members.
+
+```{r instrument_plot}
+ggplot(instrument_type, aes(y = n, x = SurveyType)) +
+  geom_bar(position = "fill", stat = "identity", 
+           aes(fill = Type)) +
+  scale_fill_viridis(discrete = TRUE, alpha = .8) +
+  theme_minimal() +
+  labs(x = "Survey Type", y = "") +
+  scale_y_continuous(labels = scales::percent)
+
+
+```
+
+## Styles
+
+Top 10 most used words of interest in regard to style of playing across both the member and general surveys.
+
+```{r styles}
+
+styles <- interests %>%
+  select(StyleAndType) %>%
+  mutate(StyleAndType = str_replace(StyleAndType, "/", " ")) %>%
+  separate(
+    StyleAndType,
+    into = c(letters, LETTERS, 
+             paste0(letters, "a"), 
+             paste0(LETTERS, "a")),
+    fill = "right",
+    sep = " "
+  ) %>%
+  pivot_longer(cols = everything(),
+               names_to = "deletethis") %>%
+  select(-deletethis) %>%
+  mutate(
+    value = tolower(value),
+    value = str_replace_all(tolower(value), "traditional", "trad"),
+    value = str_replace_all(value, "trad", "traditional"),
+    value = gsub("[[:punct:][:blank:]]+", " ", value),
+    value = str_trim(value, side = "both"),
+    CharLength = nchar(value)
+  ) %>%
+  filter(CharLength > 3 &
+           str_detect(value, "3") == FALSE &
+           str_detect(value, "4") == FALSE &
+           !value %in% c("also", "mostly", "tuned", "like", "from",
+                         "play", "music", "tunes", "tuning",
+                         "nyckelharpa", "repertoire")) %>%
+  count(value) %>%
+  arrange(desc(n)) %>%
+  head(10) %>%
+  rename("Word" = value, "Frequency" = n) %>%
+  mutate(Word = str_to_title(Word))
+
+gt(styles)
+
+```
+
+## Favorite Tunes
+
+```{r}
+
+too_many <- interests %>%
+  select(Faves) %>%
+  mutate(
+    TooMany =
+      case_when(
+        Faves == "N/A" | is.na(Faves) ~ "No response",
+        str_detect(tolower(Faves),
+                   "too many",
+                   negate = TRUE) == FALSE &
+          str_detect(Faves, "That is a very hard question",
+                     negate = FALSE) == FALSE ~ "TRUE",
+        TRUE ~ "FALSE"
+      )
+  ) %>%
+  count(TooMany)
+
+```
+
+Of the `r too_many %>% filter(TooMany == "FALSE") %>% pull(n) + too_many %>% filter(TooMany == "TRUE") %>% pull(n)` who answered the question about their 3 favorite tunes, `r too_many %>% filter(TooMany == "TRUE") %>% pull(n)` protested that the question was too difficult given how many great tunes there are! Of those who included tune names in their response, here are some tunes named more than once.
+
+```{r}
+
+tunes <- interests %>%
+  select(Faves) %>%
+  mutate(
+    TooMany =
+      case_when(
+        Faves == "N/A" | is.na(Faves) ~ "No response",
+        str_detect(tolower(Faves),
+                   "too many",
+                   negate = TRUE) == FALSE &
+          str_detect(Faves, "That is a very hard question",
+                     negate = FALSE) == FALSE ~ "TRUE",
+        TRUE ~ "FALSE"
+      ),
+    Faves = str_replace_all(Faves, ";", ","),
+    Faves = str_replace(tolower(Faves), "currently ", ""),
+    Faves = str_replace_all(tolower(Faves),
+                            "spelmansgladje",
+                            "spelmansglädje"),
+    Faves = case_when(
+      Faves ==
+        "zakaria jansons polska / gånglåt från laggars / polska efter andersson" ~
+        "zakaria jansons polska, gånglåt från laggars, polska efter andersson",
+      str_detect(tolower(Faves), "i suppose something") ~
+        "ipa gubban, josefine's waltz",
+      tolower(Faves) == "båtsman däck  -boda waltz   timeless waltz" ~
+        "båtsman däck, boda waltz, timeless waltz",
+      str_starts(tolower(Faves), "stures") ~
+        "stures schottis, halleforsnaspolska",
+      TRUE ~ Faves
+    ), 
+    Faves = str_replace(tolower(Faves),
+                        "that is a very hard question. ", "")
+  ) %>%
+  filter(TooMany == "FALSE") %>%
+  select(-TooMany) %>%
+  separate(Faves,
+           into = c(letters),
+           sep = ", ",
+           fill = "right") %>%
+  pivot_longer(cols = everything()) %>%
+  filter(!is.na(value)) %>%
+  mutate(
+    value = str_trim(value),
+    value = tolower(value),
+    value = str_remove_all(value, "and "),
+    value = str_remove_all(value, "also "),
+    value = case_when(
+      str_starts(value, "at the moment") ~ "spelmansglädje",
+      value == "bygnan" ~ "byggnan",
+      str_starts(value, "hard to narrow") |
+        value == "harjedals schottis" ~ "härjedalsschottis",
+      str_starts(value, "hom") ~ "hommage till en spelman",
+      str_starts(value, "jose") |
+        str_starts(value, "tough") ~ "josephine's dopvals",
+      str_starts(value, "karol") ~ "karolinersmarch",
+      str_starts(value, "most any tune") ~ "eklundspolska #3",
+      str_starts(value, "sheesh") ~ "spelmansglädje",
+      str_starts(value, "so i'll") ~ "trollrikepolskan",
+      str_starts(value, "spelglädjen") ~ "spelmansglädje",
+      str_starts(tolower(value), "spelmans") ~ "spelmansglädje",
+      str_detect(tolower(value), "ali’s waltz") ~ "ali's waltz",
+      str_starts(value, "vendelpolskan") ~ "vendelpolskan",
+      TRUE ~ value
+    )
+  ) %>% 
+  filter(str_detect(value, "lots of others", negate = TRUE),
+         str_detect(value, "american question", negate = TRUE),
+         str_detect(value, "but i really", negate = TRUE),
+         str_detect(value, "dalarna the adjoining areas", negate = TRUE),
+         str_detect(value, "i could not possibly", negate = TRUE),
+         str_starts(value, "many sahlstrom", negate = TRUE),
+         str_starts(value, "not sure", negate = TRUE),
+         value != "oh",
+         str_starts(value, "really liked", negate = TRUE),
+         str_starts(value, "since that", negate = TRUE),
+         str_starts(value, "so not possible", negate = TRUE),
+         str_starts(value, "these vary", negate = TRUE),
+         str_starts(value, "this is", negate = TRUE),
+         str_detect(value, "pretty exclusively", negate = TRUE),
+         str_starts(value, "too diff", negate = TRUE),
+         str_starts(value, "tunes", negate = TRUE),
+         str_starts(value, "wow", negate = TRUE),
+         str_starts(value, "varies", negate = TRUE)
+         ) %>%
+  count("Tune" = value) %>%
+  arrange(desc(n)) %>%
+  filter(n > 1) %>%
+  mutate(Tune = str_to_title(Tune)) %>%
+  rename("Mentions" = n)
+
+gt(tunes)
+	
+```
+
+## Interest in Swedish and Uppland
+
+```{r}
+
+average_interest_swedish <- 
+  mean(c(interests$InterestInSwedish), na.rm = TRUE) %>%
+  format(digits = 3)
+  
+average_interest_uppland <- 
+  mean(c(interests$InterestInUppland), na.rm = TRUE) %>%
+  format(digits = 3)
+
+```
+
+On a scale from 0 to 2, the average interest levels in the two traditions represented in the survey are:
+
+  * Swedish: **`r average_interest_swedish`** 
+  * Uppland: **`r average_interest_uppland`**
+
+## Website Feedback
+
+### Traffic
+
+```{r}
+
+website <- rbind(
+  general %>%
+    select(SiteVisits,
+           SitePurpose,
+           SiteSuggestions,
+           SurveyType),
+  member %>%
+    select(SiteVisits,
+           SitePurpose,
+           SiteSuggestions,
+           SurveyType)
+) %>% 
+  unique()
+
+how_often <- website %>%
+  group_by(SurveyType) %>%
+  summarise(VisitAvg = format(mean(SiteVisits, na.rm = TRUE),
+                              digits = 3))
+
+```
+
+On a scale from 0 (never) to 2 (often), the average responses to how often the respondents visit the website was:
+
+  * Non-members: **`r how_often %>% filter(SurveyType == "General") %>% pull(VisitAvg)`**
+  * Members: **`r how_often %>% filter(SurveyType == "Member") %>% pull(VisitAvg)`**
+
+### Why do people come to the website? 
+
+There was no significant difference between responses from members vs non-members, except fewer members are looking to buy a nyckelharpa. Taking all the answers together, including respondents selecting multiple selections, here are the reasons people are coming to the website:
+<br>
+```{r}
+site_purpose <- website %>%
+  select(SitePurpose) %>%
+  separate(
+    SitePurpose,
+    sep = ", ",
+    into = c("a", "b", "c", "d", "e", "f", "g", "h"),
+    fill = "right"
+  ) %>%
+  pivot_longer(cols = all_of(1:8)) %>%
+  filter(!is.na(value)) %>%
+  count(value) %>%
+  filter(n > 1) %>%
+  arrange(desc(n)) %>%
+  rename("Reasons" = value, "Clicks" = n)
+
+gt(site_purpose)
+```
+<br>
+In the space for additional comments, several respondents mentioned that they used to visit the website many years ago but not much recently. Other respondents mentioned that they come to the website for the member directory, to find nyckelharpa players in their area.
+
+
+### Suggestions
+
+The ANA appreciates all the wonderful feedback about the website given in the survey. Your ideas and offers to volunteer have been noted and we will get back to you [OR WHATEVER YOU WANNA WRITE HERE]
+
+<br>
+
+## Virtual Jam Feedback
+
+```{r}
+
+jams <- rbind(
+  general %>%
+    select(VirtualJamInterest,
+           VirtualJamInterest,
+           SecondSaturday,
+           JamFacilitatorInterest,
+           Nov13JamFeedback,
+           SurveyType),
+  member %>%
+    select(VirtualJamInterest,
+           VirtualJamInterest,
+           SecondSaturday,
+           JamFacilitatorInterest,
+           Nov13JamFeedback,
+           SurveyType)
+) 
+
+jam_interest_respondents <- 
+  jams %>% 
+  filter(!is.na(JamFacilitatorInterest)) %>% 
+  nrow()
+
+jam_interest <- mean(c(jams$VirtualJamInterest), na.rm = TRUE)
+
+jam_interest_by_member_type <- 
+  jams %>% 
+  count(SurveyType, VirtualJamInterest)
+
+jam_facilitator_definitely <-
+  jams %>% 
+  count(JamFacilitatorInterest) %>% 
+  filter(JamFacilitatorInterest == 2) %>% 
+  pull(n)
+
+jam_facilitator_maybe <- 
+  jams %>% 
+  count(JamFacilitatorInterest) %>% 
+  filter(JamFacilitatorInterest == 1) %>% 
+  pull(n)
+
+```
+Of the `r jam_interest_respondents` who responded to the question gauging interest in a virtual Zoom jam, where 0 is no interest and 2 is a strong interest, the average answer was `r jam_interest`.
+
+Comparing interest between members and non-members, most members had a strong interest, whereas non-members were more divided, but most were at least somewhat interested in a virtual jam.
+
+Encouragingly, there was `r jam_facilitator_definitely` respondent very interested in facilitating, and `r jam_facilitator_maybe` respondents somewhat interested in facilitating a jam.
+
+The ANA appreciates all the feedback regarding the current time slot for virtual jams and for the feedback regarding the Zoom jam held November 13, 2021. We commit to announcing upcoming virtual jams and working with volunteer facilitators. Please send feedback any time to email@domain.com. [OR WHATEVER YOU WANNA SAY HERE]
+
+## Allspiel Suggestions
+
+```{r}
+
+allspiel <- rbind(
+  general %>%
+    select(AllspielSuggestions,
+           SurveyType),
+  member %>%
+    select(AllspielSuggestions,
+           SurveyType)
+) 
+
+allspiel_responses <- allspiel %>% filter(!is.na(AllspielSuggestions))
+
+allspiel_respondents <- 
+  allspiel_responses  %>% nrow()
+
+```
+
+From `r allspiel_respondents` responses to the survey question asking for tune suggestions to add to the Allspiel list, the following tunes were noted:
+
+  * Älvdalensbrudmarsch
+  * Flickorna Svensson
+  * Langdans fran Solleron
+  * Bisonpolska
+  * Härjedalsschottis
+  * Österbypolska
+  * Elins Vals
+  * Äppelbo Gånglåt
+  * Bisonpolska
+  * Juringius
+  * Polska efter Hugo Falk
+  * Hambo efter Carl Johan Krej
+  * 1814
+  * Schottis fr. Härjedalen
+  * Stures 80-år schottis
+  * Kyrkpolska
+  * Hommage til en Spelman
+  * Adventspolskan
+  * Spelmansglädje
+  * Karl XII Vals
+  * Eklundapolska 1 & 3
+  * Ridmarsch efter Byss-Calle
+  * Femtolen
+
+The ANA will review this list and make revisions as necessary. [OR WHATEVER YOU WANNA SAY]  
+
+## Virtual Workshop Feedback
+
+```{r}
+workshop <- rbind(
+  general %>%
+    select(starts_with("VirtualWorkshop"),
+           SurveyType),
+  member %>%
+    select(starts_with("VirtualWorkshop"),
+           SurveyType)
+)
+
+workshop_interest <- mean(c(workshop$VirtualWorkshopInterest), na.rm = TRUE)
+```
+
+### Overall Interest
+
+Overall interest in a virtual workshop (however that is defined) on a scale from 0 (no interest) to 2 (strong interest), was an average of `r format(workshop_interest, digits = 3)`.
+
+### Workshop Types
+
+```{r}
+
+tunes <- "Learning tunes"
+tune_types <- "particular tune types"
+dancing <- "Playing for dancing"
+maintenance <- "Maintenance for your nyckelharpa"
+beginners <- "Getting started with the nyckelharpa for beginners"
+harmonies <- "Playing harmonies"
+
+workshop_types <- workshop %>%
+  select(VirtualWorkshopTypes) %>%
+  filter(!is.na(VirtualWorkshopTypes)) %>%
+  mutate(
+    Tunes = if_else(str_detect(VirtualWorkshopTypes, tunes), 1, 0),
+    TuneTypes = if_else(str_detect(VirtualWorkshopTypes, tune_types), 1, 0),
+    Dancing = if_else(str_detect(VirtualWorkshopTypes, dancing), 1, 0),
+    Maintenance = if_else(str_detect(VirtualWorkshopTypes, maintenance), 1, 0),
+    Beginners = if_else(str_detect(VirtualWorkshopTypes, beginners), 1, 0),
+    Harmonies = if_else(str_detect(VirtualWorkshopTypes, harmonies), 1, 0),
+    Other = case_when(
+      str_detect(VirtualWorkshopTypes, tunes, negate = TRUE) &
+        str_detect(VirtualWorkshopTypes, harmonies, negate = TRUE) &
+        str_detect(VirtualWorkshopTypes, tune_types, negate = TRUE) &
+        str_detect(VirtualWorkshopTypes, dancing, negate = TRUE) &
+        str_detect(VirtualWorkshopTypes, maintenance, negate = TRUE) &
+        str_detect(VirtualWorkshopTypes, beginners, negate = TRUE) ~ 
+        VirtualWorkshopTypes
+    )
+  ) %>%
+  adorn_totals("row") %>%
+  select(-VirtualWorkshopTypes, -Other)
+
+gt(workshop_types)
+  
+```
+<br>
+^ Preliminary, will make this better soon
+
+## Newsletter Feedback
+
+## Membership Feedback
+
+## Survey Feedback
