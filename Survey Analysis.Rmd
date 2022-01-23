@@ -30,11 +30,15 @@ general_responses <- general %>% nrow()
 
 ```
 
-## American Nyckelharpa Association Annual Survey
+# Survey Summary
 
-Hi if you participated in this survey, you will be interested to see some results! The member survey had `r member_responses` respondents and the general one had `r general_responses`, for a total of `r member_responses + general_responses` responses. We are excited to share with you some interesting insights!
+Hi if you participated in this survey, you will be interested to see some results. We are excited to share with you some interesting insights!
 
-### Instrument Types
+  * Member survey: `r member_responses` respondents 
+  * General survey: `r general_responses` respondents
+  * **Total: `r member_responses + general_responses` total responses**
+
+# Instrument Types
 
 ```{r interests}
 interests <- rbind(
@@ -93,7 +97,7 @@ ggplot(instrument_type, aes(y = n, x = SurveyType)) +
 
 ```
 
-## Styles
+# Styles
 
 Top 10 most used words of interest in regard to style of playing across both the member and general surveys.
 
@@ -133,11 +137,41 @@ styles <- interests %>%
   rename("Word" = value, "Frequency" = n) %>%
   mutate(Word = str_to_title(Word))
 
-gt(styles)
+style_count <- interests %>%
+  select(StyleAndType) %>%
+  filter(!is.na(StyleAndType)) %>%
+  nrow()
+
+styles %>%
+  mutate(Word = fct_reorder(Word, desc(Frequency))) %>%
+  ggplot(aes(x = Word, y = Frequency, fill = Word)) +
+  geom_col() +
+  theme_minimal() +
+  labs(
+    title = "Styles",
+    subtitle = paste(style_count,
+                     "respondents selected multiple styles"),
+    x = "",
+    y = ""
+  ) +
+  geom_hline(aes(yintercept = style_count + 2)) +
+  scale_fill_viridis(discrete = TRUE) +
+  geom_label(
+    label = paste(style_count, "respondents"),
+    x = 4.1,
+    y = style_count + 1,
+    label.padding = unit(0.25, "lines"),
+    label.size = 0.25,
+    color = "black",
+    fill = "#5DC863FF"
+  ) +
+  theme(axis.text.x = 
+          element_text(angle = 33, vjust = 0.5, hjust=1)) + 
+  guides(fill = "none") 
 
 ```
 
-## Favorite Tunes
+# Favorite Tunes
 
 ```{r}
 
@@ -257,7 +291,7 @@ gt(tunes)
 	
 ```
 
-## Interest in Swedish and Uppland
+# Interest in Swedish and Uppland
 
 ```{r}
 
@@ -276,9 +310,9 @@ On a scale from 0 to 2, the average interest levels in the two traditions repres
   * Swedish: **`r average_interest_swedish`** 
   * Uppland: **`r average_interest_uppland`**
 
-## Website Feedback
+# Website Feedback
 
-### Traffic
+## Traffic
 
 ```{r}
 
@@ -308,7 +342,7 @@ On a scale from 0 (never) to 2 (often), the average responses to how often the r
   * Non-members: **`r how_often %>% filter(SurveyType == "General") %>% pull(VisitAvg)`**
   * Members: **`r how_often %>% filter(SurveyType == "Member") %>% pull(VisitAvg)`**
 
-### Why do people come to the website? 
+## Why do people come to the website? 
 
 There was no significant difference between responses from members vs non-members, except fewer members are looking to buy a nyckelharpa. Taking all the answers together, including respondents selecting multiple selections, here are the reasons people are coming to the website:
 <br>
@@ -326,21 +360,60 @@ site_purpose <- website %>%
   count(value) %>%
   filter(n > 1) %>%
   arrange(desc(n)) %>%
-  rename("Reasons" = value, "Clicks" = n)
+  rename("Reasons" = value, "Clicks" = n) %>%
+  mutate(Reasons = case_when(
+    str_detect(Reasons, "events") ~ "Nyckelharpa events",
+    str_detect(Reasons, "maintenance") ~ "Nyckelharpa maintenance",
+    str_detect(Reasons, "music") ~ "Nyckelharpa music",
+    str_detect(Reasons, "instrument") ~ "Nyckelharpa & its history",
+    str_detect(Reasons, "buy") ~ "How to buy a nyckelharpa"
+  ))
 
-gt(site_purpose)
+site_purpose_count <- website %>%
+  select(SitePurpose) %>%
+  filter(!is.na(SitePurpose)) %>%
+  nrow()
+
+site_purpose %>%
+  mutate(Reasons = fct_reorder(Reasons, Clicks)) %>%
+  ggplot(aes(x = Reasons, y = Clicks, fill = Reasons)) +
+  geom_col() +
+  theme_minimal() +
+  labs(
+    title = "Site Purpose",
+    subtitle = 
+      paste(site_purpose_count,
+            "respondents selected the reasons they come to the site"), 
+    x = "",
+    y = ""
+  ) +
+  ylim(0, 75) +
+  geom_hline(aes(yintercept = site_purpose_count)) +
+  scale_fill_viridis(discrete = TRUE) +
+  geom_label(
+    label = paste(site_purpose_count, "respondents"),
+    x = 4.1,
+    y = site_purpose_count,
+    label.padding = unit(0.25, "lines"),
+    label.size = 0.25,
+    color = "black",
+    fill = "#5DC863FF"
+  ) +
+  coord_flip() + 
+  guides(fill = "none")
+
 ```
 <br>
 In the space for additional comments, several respondents mentioned that they used to visit the website many years ago but not much recently. Other respondents mentioned that they come to the website for the member directory, to find nyckelharpa players in their area.
 
 
-### Suggestions
+## Suggestions
 
 The ANA appreciates all the wonderful feedback about the website given in the survey. Your ideas and offers to volunteer have been noted and we will get back to you [OR WHATEVER YOU WANNA WRITE HERE]
 
 <br>
 
-## Virtual Jam Feedback
+# Virtual Jam Feedback
 
 ```{r}
 
@@ -393,7 +466,7 @@ Encouragingly, there was `r jam_facilitator_definitely` respondent very interest
 
 The ANA appreciates all the feedback regarding the current time slot for virtual jams and for the feedback regarding the Zoom jam held November 13, 2021. We commit to announcing upcoming virtual jams and working with volunteer facilitators. Please send feedback any time to email@domain.com. [OR WHATEVER YOU WANNA SAY HERE]
 
-## Allspiel Suggestions
+# Allspiel Suggestions
 
 ```{r}
 
@@ -441,7 +514,7 @@ From `r allspiel_respondents` responses to the survey question asking for tune s
 
 The ANA will review this list and make revisions as necessary. [OR WHATEVER YOU WANNA SAY]  
 
-## Virtual Workshop Feedback
+# Virtual Workshop Feedback
 
 ```{r}
 workshop <- rbind(
@@ -456,11 +529,11 @@ workshop <- rbind(
 workshop_interest <- mean(c(workshop$VirtualWorkshopInterest), na.rm = TRUE)
 ```
 
-### Overall Interest
+## Overall Interest
 
 Overall interest in a virtual workshop (however that is defined) on a scale from 0 (no interest) to 2 (strong interest), was an average of `r format(workshop_interest, digits = 3)`.
 
-### Workshop Types
+## Workshop Types
 
 ```{r}
 
@@ -470,10 +543,7 @@ dancing <- "Playing for dancing"
 maintenance <- "Maintenance for your nyckelharpa"
 beginners <- "Getting started with the nyckelharpa for beginners"
 harmonies <- "Playing harmonies"
-workshop_type_count <- workshop %>%
-  select(VirtualWorkshopTypes) %>%
-  filter(!is.na(VirtualWorkshopTypes)) %>%
-  nrow()
+
 workshop_types <- workshop %>%
   select(VirtualWorkshopTypes) %>%
   filter(!is.na(VirtualWorkshopTypes)) %>%
@@ -501,6 +571,11 @@ workshop_types <- workshop %>%
                names_to = "Topics") %>%
   arrange(desc(value))
 
+workshop_type_count <- workshop %>%
+  select(VirtualWorkshopTypes) %>%
+  filter(!is.na(VirtualWorkshopTypes)) %>%
+  nrow()
+
 workshop_types %>%
   mutate(Topics = fct_reorder(Topics, desc(value))) %>%
   ggplot(aes(x = Topics, y = value, fill = Topics)) +
@@ -523,14 +598,14 @@ workshop_types %>%
     label.size = 0.25,
     color = "black",
     fill = "#5DC863FF"
-  )
+  ) + 
+  guides(fill = "none")
 
 ```
 <br>
-^ Preliminary, will make this better soon
 
-## Newsletter Feedback
+# Newsletter Feedback
 
-## Membership Feedback
+# Membership Feedback
 
-## Survey Feedback
+# Survey Feedback
