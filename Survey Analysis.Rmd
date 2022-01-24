@@ -606,6 +606,88 @@ workshop_types %>%
 
 # Newsletter Feedback
 
+```{r}
+
+newsletter <- rbind(
+  general %>%
+    select(starts_with("Newsletter"),
+           SurveyType),
+  member %>%
+    select(starts_with("Newsletter"),
+           SurveyType)
+)
+newsletter_interest_count <- newsletter %>%
+  filter(!is.na(NewsletterInterest)) %>% nrow()
+
+newsletter_contributor_count <- newsletter %>%
+  filter(!is.na(NewsletterContributorInterest)) %>% nrow()
+
+```
+
+There were `r newsletter_interest_count` respondents who indicated whether they were interested in reading an ANA newsletter, and `r newsletter_contributor_count` who indicated an interest in contributing to the creation of a newsletter.
+
+An overview of the newsletter feedback brought out some interest, but many had concerns that it might become burdensome to create and distribute. However, there were some who were interested in contributing content, layout and design services, and money toward its creation.
+
 # Membership Feedback
 
+```{r}
+
+membership <- rbind(
+  general %>%
+    select(starts_with("Membership"),
+           VolunteerInterest,
+           SurveyType),
+  member %>%
+    select(starts_with("Membership"),
+           VolunteerInterest,
+           SurveyType) %>%
+    mutate(MembershipInterest = "Already a member")
+)
+
+membership_interest_count <- membership %>%
+  filter(!is.na(MembershipInterest) &
+           MembershipInterest != "Already a member") %>% nrow()
+
+membership_benefits_count <- membership %>%
+  filter(!is.na(MembershipBenefits)) %>% nrow()
+
+volunteer_interest_count <- membership %>%
+  filter(!is.na(VolunteerInterest)) %>% nrow()
+
+membership_interest <- membership %>%
+  filter(!is.na(MembershipInterest) & 
+           MembershipInterest != "Already a member") %>%
+  mutate(
+    MembershipInterest = case_when(
+      MembershipInterest %in% c("Yes", "Just signed up.") ~ "Yes",
+      MembershipInterest == "No" ~ "No",
+      TRUE ~ "Maybe"
+    ),
+    MembershipInterest = factor(MembershipInterest,
+                                levels = c("Yes", "Maybe", "No"))
+  ) %>% 
+  count(MembershipInterest) 
+
+```
+
+Of the `r membership_interest_count` non-member respondents who answered this question, there was strong interest in ANA membership:
+
+```{r}
+
+ggplot(membership_interest, 
+       aes(x = MembershipInterest, y = n, fill = MembershipInterest)) +
+  geom_col() +
+  scale_fill_viridis(discrete = TRUE) +
+  theme_minimal() +
+  guides(fill = "none") +
+  labs(
+    title = "Interest in Membership (from non-members)",
+    x = "",
+    y = ""
+  )
+
+```
+
 # Survey Feedback
+
+
