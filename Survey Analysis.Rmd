@@ -3,7 +3,7 @@ title: "American Nyckelharpa Association 2021 Survey Analysis"
 author: "Genelle Denzin"
 output: 
   html_document:
-    theme: cosmo
+    theme: cerulean
 editor_options: 
   chunk_output_type: console
 ---
@@ -22,6 +22,7 @@ library(here)
 library(viridis)
 library(scales)
 library(gt)
+library(english)
 
 source(here("survey.R"))
 
@@ -30,15 +31,15 @@ general_responses <- general %>% nrow()
 
 ```
 
-# Survey Summary
+# Survey Summary 
 
-Hi if you participated in this survey, you will be interested to see some results. We are excited to share with you some interesting insights!
+<font size = "5">Hi if you participated in this survey, you will be interested to see some results. We are excited to share with you some interesting insights!
 
   * Member survey: `r member_responses` respondents 
   * General survey: `r general_responses` respondents
   * **Total: `r member_responses + general_responses` total responses**
 
-# Instrument Types
+## Instrument Types 
 
 ```{r interests}
 interests <- rbind(
@@ -83,7 +84,7 @@ instrument_type <- interests %>%
   count(SurveyType, Type)
 ```
 
-A total of `r instrument_type %>% filter(Type == "3 row") %>% summarise(t = sum(n)) %>% pull(t)`, or `r percent(instrument_type %>% filter(Type == "3 row") %>% summarise(t = sum(n)) %>% pull(t)/ instrument_type %>% summarise(t = sum(n)) %>% pull(t))` of respondents are working with a 3-row nyckelharpa, and we did find a difference in how that differs from ANA members and non-members, with more members having 4-row and multiple types of harpas than respondents who were not members.
+A total of `r instrument_type %>% filter(Type == "3 row") %>% summarise(t = sum(n)) %>% pull(t)`, or `r percent(instrument_type %>% filter(Type == "3 row") %>% summarise(t = sum(n)) %>% pull(t)/ instrument_type %>% summarise(t = sum(n)) %>% pull(t))` of respondents are working with a 3-row nyckelharpa, and we did find a difference in ANA members and non-members, with more members having 4-row and multiple types of harpas than respondents who were not members.
 
 ```{r instrument_plot}
 ggplot(instrument_type, aes(y = n, x = SurveyType)) +
@@ -91,13 +92,14 @@ ggplot(instrument_type, aes(y = n, x = SurveyType)) +
            aes(fill = Type)) +
   scale_fill_viridis(discrete = TRUE, alpha = .8) +
   theme_minimal() +
+  theme(text = element_text(size = 20)) +
   labs(x = "Survey Type", y = "") +
   scale_y_continuous(labels = scales::percent)
 
 
 ```
 
-# Styles
+## Styles
 
 Top 10 most used words of interest in regard to style of playing across both the member and general surveys.
 
@@ -147,10 +149,11 @@ styles %>%
   ggplot(aes(x = Word, y = Frequency, fill = Word)) +
   geom_col() +
   theme_minimal() +
+  theme(text = element_text(size = 20)) +
   labs(
     title = "Styles",
-    subtitle = paste(style_count,
-                     "respondents selected multiple styles"),
+    caption = paste(style_count,
+                     "respondents used these words most often"),
     x = "",
     y = ""
   ) +
@@ -171,7 +174,7 @@ styles %>%
 
 ```
 
-# Favorite Tunes
+### Favorite Tunes
 
 ```{r}
 
@@ -193,7 +196,7 @@ too_many <- interests %>%
 
 ```
 
-Of the `r too_many %>% filter(TooMany == "FALSE") %>% pull(n) + too_many %>% filter(TooMany == "TRUE") %>% pull(n)` who answered the question about their 3 favorite tunes, `r too_many %>% filter(TooMany == "TRUE") %>% pull(n)` protested that the question was too difficult given how many great tunes there are! Of those who included tune names in their response, here are some tunes named more than once.
+Of the `r too_many %>% filter(TooMany == "FALSE") %>% pull(n) + too_many %>% filter(TooMany == "TRUE") %>% pull(n)` who answered the question about their 3 favorite tunes, `r too_many %>% filter(TooMany == "TRUE") %>% pull(n)` protested that the question was too difficult given how many great tunes there are. Of those who included tune names in their response, here are some tunes named more than once.
 
 ```{r}
 
@@ -287,21 +290,80 @@ tunes <- interests %>%
   mutate(Tune = str_to_title(Tune)) %>%
   rename("Mentions" = n)
 
-gt(tunes)
+gt(tunes) %>%
+  tab_options(table.font.size = px(22))
 	
 ```
 
-# Interest in Swedish and Uppland
+### Interest in Swedish and Uppland
 
 ```{r}
 
 average_interest_swedish <- 
-  mean(c(interests$InterestInSwedish), na.rm = TRUE) %>%
-  format(digits = 3)
+  mean(c(interests$InterestInSwedish), na.rm = TRUE) 
   
 average_interest_uppland <- 
-  mean(c(interests$InterestInUppland), na.rm = TRUE) %>%
-  format(digits = 3)
+  mean(c(interests$InterestInUppland), na.rm = TRUE)
+
+
+buckets = factor(
+  c(
+    'Not Interested',
+    'A Bit of Interest',
+    'Interested',
+    'Strong Interest'
+  ),
+  levels = (
+    c(
+      'Not Interested',
+      'A Bit of Interest',
+      'Interested',
+      'Strong Interest'
+    )
+  ),
+  ordered = TRUE
+)
+
+prep_swedish_interest <-
+  data.frame(points = rep(1, 4), interest = buckets)
+
+prep_swedish_interest %>%
+  ggplot(aes(x = points, fill = interest)) +
+  geom_bar(position = "stack", show.legend = FALSE, width = .4) +
+  geom_text(aes(label = buckets,
+                y = seq(
+                  from = 0.5, to = 3.5, by = 1
+                ))) +
+  geom_point(
+    aes(x = .75, y = (average_interest_swedish/2) * 4),
+    shape = 24,
+    size = 10,
+    colour = "black",
+    fill = "black"
+  ) +
+  xlim(0, 2) +
+  scale_fill_brewer(palette = "RdBu") +
+  theme_void() +
+  coord_flip(expand = FALSE) 
+
+prep_swedish_interest %>%
+  ggplot(aes(x = points, fill = interest)) +
+  geom_bar(position = "stack", show.legend = FALSE, width = .4) +
+  geom_text(aes(label = buckets,
+                y = seq(
+                  from = 0.5, to = 3.5, by = 1
+                ))) +
+  geom_point(
+    aes(x = .75, y = (average_interest_uppland/2) * 4),
+    shape = 24,
+    size = 10,
+    colour = "black",
+    fill = "black"
+  ) +
+  xlim(0, 2) +
+  scale_fill_brewer(palette = "RdBu") +
+  theme_void() +
+  coord_flip(expand = FALSE) 
 
 ```
 
@@ -310,9 +372,9 @@ On a scale from 0 to 2, the average interest levels in the two traditions repres
   * Swedish: **`r average_interest_swedish`** 
   * Uppland: **`r average_interest_uppland`**
 
-# Website Feedback
+## Website Feedback
 
-## Traffic
+### Traffic
 
 ```{r}
 
@@ -342,9 +404,10 @@ On a scale from 0 (never) to 2 (often), the average responses to how often the r
   * Non-members: **`r how_often %>% filter(SurveyType == "General") %>% pull(VisitAvg)`**
   * Members: **`r how_often %>% filter(SurveyType == "Member") %>% pull(VisitAvg)`**
 
-## Why do people come to the website? 
+### Why do people come to the website? 
 
 There was no significant difference between responses from members vs non-members, except fewer members are looking to buy a nyckelharpa. Taking all the answers together, including respondents selecting multiple selections, here are the reasons people are coming to the website:
+<br>
 <br>
 ```{r}
 site_purpose <- website %>%
@@ -379,9 +442,10 @@ site_purpose %>%
   ggplot(aes(x = Reasons, y = Clicks, fill = Reasons)) +
   geom_col() +
   theme_minimal() +
+  theme(text = element_text(size = 20)) +
   labs(
     title = "Site Purpose",
-    subtitle = 
+    caption = 
       paste(site_purpose_count,
             "respondents selected the reasons they come to the site"), 
     x = "",
@@ -406,14 +470,11 @@ site_purpose %>%
 <br>
 In the space for additional comments, several respondents mentioned that they used to visit the website many years ago but not much recently. Other respondents mentioned that they come to the website for the member directory, to find nyckelharpa players in their area.
 
-
-## Suggestions
-
 The ANA appreciates all the wonderful feedback about the website given in the survey. Your ideas and offers to volunteer have been noted and we will get back to you [OR WHATEVER YOU WANNA WRITE HERE]
 
 <br>
 
-# Virtual Jam Feedback
+## Virtual Jam Feedback
 
 ```{r}
 
@@ -466,7 +527,7 @@ Encouragingly, there was `r jam_facilitator_definitely` respondent very interest
 
 The ANA appreciates all the feedback regarding the current time slot for virtual jams and for the feedback regarding the Zoom jam held November 13, 2021. We commit to announcing upcoming virtual jams and working with volunteer facilitators. Please send feedback any time to email@domain.com. [OR WHATEVER YOU WANNA SAY HERE]
 
-# Allspiel Suggestions
+## Allspiel Suggestions
 
 ```{r}
 
@@ -514,7 +575,7 @@ From `r allspiel_respondents` responses to the survey question asking for tune s
 
 The ANA will review this list and make revisions as necessary. [OR WHATEVER YOU WANNA SAY]  
 
-# Virtual Workshop Feedback
+## Virtual Workshop Feedback
 
 ```{r}
 workshop <- rbind(
@@ -529,11 +590,11 @@ workshop <- rbind(
 workshop_interest <- mean(c(workshop$VirtualWorkshopInterest), na.rm = TRUE)
 ```
 
-## Overall Interest
+### Overall Interest
 
 Overall interest in a virtual workshop (however that is defined) on a scale from 0 (no interest) to 2 (strong interest), was an average of `r format(workshop_interest, digits = 3)`.
 
-## Workshop Types
+### Workshop Types
 
 ```{r}
 
@@ -581,9 +642,10 @@ workshop_types %>%
   ggplot(aes(x = Topics, y = value, fill = Topics)) +
   geom_col() +
   theme_minimal() +
+  theme(text = element_text(size = 20)) +
   labs(
     title = "Workshop Interest",
-    subtitle = paste(workshop_type_count,
+    caption = paste(workshop_type_count,
                      "respondents selected multiple topics"),
     x = "",
     y = ""
@@ -599,12 +661,13 @@ workshop_types %>%
     color = "black",
     fill = "#5DC863FF"
   ) + 
+  coord_flip() +
   guides(fill = "none")
 
 ```
 <br>
 
-# Newsletter Feedback
+## Newsletter Feedback
 
 ```{r}
 
@@ -628,7 +691,9 @@ There were `r newsletter_interest_count` respondents who indicated whether they 
 
 An overview of the newsletter feedback brought out some interest, but many had concerns that it might become burdensome to create and distribute. However, there were some who were interested in contributing content, layout and design services, and money toward its creation.
 
-# Membership Feedback
+## Membership Feedback
+
+### Membership Interest (from non-members)
 
 ```{r}
 
@@ -679,6 +744,7 @@ ggplot(membership_interest,
   geom_col() +
   scale_fill_viridis(discrete = TRUE) +
   theme_minimal() +
+  theme(text = element_text(size = 20)) +
   guides(fill = "none") +
   labs(
     title = "Interest in Membership (from non-members)",
@@ -688,6 +754,44 @@ ggplot(membership_interest,
 
 ```
 
-# Survey Feedback
+### Membership Benefits
+
+```{r}
+benefits <- tribble(
+  ~Benefits, ~Count,
+  "discounts",	4,
+  "finding others",	6,
+  "access",	7,
+  "na",	11,
+  "none",	19
+)
+```
+
+The question about membership benefits was interpreted broadly by the respondents who answered it. Here are some key takeaways:
+
+  * Most felt like adding benefits to ANA membership was unnecessary
+  * ANA membership was associated with finding other players, access to content, information about events, and a few mentioned discounts
+  * Community and keeping the nyckelharpa as an instrument alive was an underlying theme
+
+## Survey Feedback
+
+```{r}
+survey_feedback <- rbind(
+  general %>%
+    select(SurveyFeedback,
+           SurveyType),
+  member %>%
+    select(SurveyFeedback,
+           SurveyType)
+)
+
+survey_feedback_count <- survey_feedback %>%
+  filter(!is.na(SurveyFeedback)) %>% nrow()
+
+```
+
+`r str_to_sentence(as.english(survey_feedback_count))` respondents gave feedback on the survey itself, though the data analyst has some to add! The ANA greatly appreciates all the feedback given and we plan to incorporate your suggestions in next year's survey!
+
+So much thanks to everyone who participated and read all the way to the last of the analysis! Hope you enjoyed reading the results! <3
 
 
