@@ -337,7 +337,7 @@ prep_swedish_interest %>%
   geom_point(
     aes(x = .75, y = (average_interest_swedish/2) * 4),
     shape = 24,
-    size = 10,
+    size = 7,
     colour = "black",
     fill = "black"
   ) +
@@ -356,7 +356,7 @@ prep_swedish_interest %>%
   geom_point(
     aes(x = .75, y = (average_interest_uppland/2) * 4),
     shape = 24,
-    size = 10,
+    size = 7,
     colour = "black",
     fill = "black"
   ) +
