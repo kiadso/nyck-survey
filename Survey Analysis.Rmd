@@ -1,9 +1,9 @@
 ---
 title: "American Nyckelharpa Association 2021 Survey Analysis"
-author: "Genelle Denzin"
+author: "Analysis by Genelle Denzin (volunteer) and Lane Foster Harrell"
 output: 
   html_document:
-    theme: cerulean
+    theme: paper
 editor_options: 
   chunk_output_type: console
 ---
@@ -31,7 +31,7 @@ general_responses <- general %>% nrow()
 
 ```
 
-# Survey Summary 
+# Survey Summary {.tabset}
 
 <font size = "4">Hi if you participated in this survey, you will be interested to see some results. We are excited to share with you some interesting insights!
 
@@ -39,7 +39,7 @@ general_responses <- general %>% nrow()
   * General survey: `r general_responses` respondents
   * **Total: `r member_responses + general_responses` total responses**
 
-## Instrument Types 
+## Instruments 
 
 ```{r interests}
 interests <- rbind(
@@ -93,15 +93,13 @@ ggplot(instrument_type, aes(y = n, x = SurveyType)) +
   scale_fill_viridis(discrete = TRUE, alpha = .8) +
   theme_minimal() +
   theme(text = element_text(size = 18)) +
-  labs(x = "Survey Type", y = "") +
+  labs(x = "", y = "") +
   scale_y_continuous(labels = scales::percent)
 
 
 ```
 
-## Experience
-
-blah blah
+## Experience 
 
 ```{r}
 experience <- rbind(general %>%
@@ -130,15 +128,17 @@ experience <- rbind(general %>%
 experience %>%
   count(ExperienceAdjust, SurveyType) %>%
   ggplot(aes(x = SurveyType, y = n, fill = ExperienceAdjust)) +
-  geom_bar(stat = "identity") +
+  geom_bar(stat = "identity", alpha = .8) +
   scale_fill_viridis("", discrete = TRUE) +
   theme_minimal() +
   theme(text = element_text(size = 18)) +
-  labs(x = "Survey Type", y = "", title = "Experience") 
+  labs(x = "", y = "", title = "Experience") 
 ```
 
 
-## Styles
+## Music 
+
+### Styles
 
 Top 5 most used words of interest in regard to style of playing across both the member and general surveys.
 
@@ -187,7 +187,7 @@ style_count <- interests %>%
 styles %>%
   mutate(Word = fct_reorder(Word, desc(Frequency))) %>%
   ggplot(aes(x = Word, y = Frequency, fill = Word)) +
-  geom_col() +
+  geom_col(alpha = .8) +
   theme_minimal() +
   theme(text = element_text(size = 18)) +
   labs(
@@ -209,12 +209,73 @@ styles %>%
     fill = "#5DC863FF"
   ) +
   theme(axis.text.x = 
-          element_text(angle = 33, vjust = 0.5, hjust=1)) + 
+          element_text(angle = 33, vjust = 0.5, hjust = 1)) + 
   guides(fill = "none") 
 
 ```
 
-### Favorite Tunes
+#### Interest in Swedish and Uppland
+
+On a scale from 0 to 2, the average interest levels in the two traditions represented in the survey are:
+```{r}
+
+average_interest_swedish <- 
+  mean(c(interests$InterestInSwedish), na.rm = TRUE) 
+  
+average_interest_uppland <- 
+  mean(c(interests$InterestInUppland), na.rm = TRUE)
+
+interest_national <- data.frame(Type = c("Swedish", "Uppland"),
+                            AverageInterest = c(
+                              average_interest_swedish,
+                              average_interest_uppland
+                            ),
+                            Denominator = 2)
+
+interest_national %>%
+  ggplot(aes(x = Type, fill = Type)) +
+  geom_segment(aes(xend = Type, y = 0, yend = AverageInterest),
+               color = "dark gray") +
+  geom_point(aes(y = AverageInterest),
+             fill = "blue",
+             size = 4, 
+             alpha = .7,
+             shape = 21) +
+  geom_hline(yintercept = 2) +
+  theme_minimal() +
+  theme(text = element_text(size = 18)) +
+  labs(
+    title = "Interest in Swedish and Uppland Styles",
+    x = "",
+    y = "Average Interest"
+  ) +
+  geom_label(
+    label = "Strong Interest ->",
+    x = 2.5,
+    y = 1.75,
+    label.padding = unit(0.25, "lines"),
+    label.size = 0.25,
+    color = "black",
+    fill = "#5DC863FF"
+  ) +
+    geom_label(
+    label = "<- No Interest",
+    x = 2.5,
+    y = .2,
+    label.padding = unit(0.25, "lines"),
+    label.size = 0.25,
+    color = "black",
+    fill = "#5DC863FF"
+  ) +
+  coord_flip() +
+  guides(fill = "none")
+
+
+```
+
+### Tunes
+
+#### Favorites
 
 ```{r}
 
@@ -335,69 +396,56 @@ gt(tunes) %>%
 	
 ```
 
-### Interest in Swedish and Uppland
+#### Allspel Suggestions
 
-On a scale from 0 to 2, the average interest levels in the two traditions represented in the survey are:
 ```{r}
 
-average_interest_swedish <- 
-  mean(c(interests$InterestInSwedish), na.rm = TRUE) 
-  
-average_interest_uppland <- 
-  mean(c(interests$InterestInUppland), na.rm = TRUE)
+allspiel <- rbind(
+  general %>%
+    select(AllspielSuggestions,
+           SurveyType),
+  member %>%
+    select(AllspielSuggestions,
+           SurveyType)
+) 
 
-interest_national <- data.frame(Type = c("Swedish", "Uppland"),
-                            AverageInterest = c(
-                              average_interest_swedish,
-                              average_interest_uppland
-                            ),
-                            Denominator = 2)
+allspiel_responses <- allspiel %>% filter(!is.na(AllspielSuggestions))
 
-interest_national %>%
-  ggplot(aes(x = Type, fill = Type)) +
-  geom_segment(aes(xend = Type, y = 0, yend = AverageInterest),
-               color = "dark gray") +
-  geom_point(aes(y = AverageInterest),
-             fill = "blue",
-             size = 4, 
-             alpha = .7,
-             shape = 21) +
-  geom_hline(yintercept = 2) +
-  theme_minimal() +
-  theme(text = element_text(size = 18)) +
-  labs(
-    title = "Interest in Swedish and Uppland Styles",
-    x = "",
-    y = "Average Interest"
-  ) +
-  geom_label(
-    label = "Strong Interest ->",
-    x = 2.5,
-    y = 1.75,
-    label.padding = unit(0.25, "lines"),
-    label.size = 0.25,
-    color = "black",
-    fill = "#5DC863FF"
-  ) +
-    geom_label(
-    label = "<- No Interest",
-    x = 2.5,
-    y = .2,
-    label.padding = unit(0.25, "lines"),
-    label.size = 0.25,
-    color = "black",
-    fill = "#5DC863FF"
-  ) +
-  coord_flip() +
-  guides(fill = "none")
-
+allspiel_respondents <- 
+  allspiel_responses  %>% nrow()
 
 ```
 
+From `r allspiel_respondents` responses to the survey question asking for tune suggestions to add to the [Allspel list](http://www.nyckelharpa.org/archive/written-music/american-allspel-list/), the following tunes were noted:
 
-## Website Feedback
+  * 1814
+  * Adventspolskan
+  * Bisonpolska
+  * Eklundapolska 1 & 3
+  * Elins Vals
+  * Femtolen
+  * Flickorna Svensson
+  * Hambo efter Carl Johan Krej
+  * Hommage til en Spelman
+  * Härjedalsschottis
+  * Juringius
+  * Karl XII Vals
+  * Kyrkpolska
+  * Langdans fran Solleron
+  * Polska efter Hugo Falk
+  * Ridmarsch efter Byss-Calle
+  * Schottis fr. Härjedalen
+  * Spelmansglädje
+  * Stures 80-år schottis
+  * Älvdalensbrudmarsch
+  * Äppelbo Gånglåt
+  * Österbypolska
 
-### Traffic
+## Feedback {.tabset .tabset-pills}
+
+### Website 
+
+#### Website Traffic
 
 ```{r}
 
@@ -461,12 +509,7 @@ how_often %>%
 
 ```
 
-On a scale from 0 (never) to 2 (often), the average responses to how often the respondents visit the website was:
-
-  * Non-members: **`r how_often %>% filter(SurveyType == "General") %>% pull(VisitAvg)`**
-  * Members: **`r how_often %>% filter(SurveyType == "Member") %>% pull(VisitAvg)`**
-
-### Why do people come to the website? 
+#### Why do people come to the website? 
 
 There was no significant difference between responses from members vs non-members, except fewer members are looking to buy a nyckelharpa. Taking all the answers together, including respondents selecting multiple selections, here are the reasons people are coming to the website:
 <br>
@@ -502,7 +545,7 @@ site_purpose_count <- website %>%
 site_purpose %>%
   mutate(Reasons = fct_reorder(Reasons, Clicks)) %>%
   ggplot(aes(x = Reasons, y = Clicks, fill = Reasons)) +
-  geom_col() +
+  geom_col(alpha = .8) +
   theme_minimal() +
   theme(text = element_text(size = 18)) +
   labs(
@@ -534,7 +577,7 @@ In the space for additional comments, several respondents mentioned that they us
 
 <br>
 
-## Virtual Jam Feedback
+### Virtual Jam
 
 ```{r}
 
@@ -562,10 +605,6 @@ jam_interest_respondents <-
 
 jam_interest <- mean(c(jams$VirtualJamInterest), na.rm = TRUE)
 
-jam_interest_by_member_type <- 
-  jams %>% 
-  count(SurveyType, VirtualJamInterest)
-
 jam_facilitator_definitely <-
   jams %>% 
   count(JamFacilitatorInterest) %>% 
@@ -579,62 +618,67 @@ jam_facilitator_maybe <-
   pull(n)
 
 ```
-Of the `r jam_interest_respondents` who responded to the question gauging interest in a virtual Zoom jam, where 0 is no interest and 2 is a strong interest, the average answer was `r jam_interest`.
+
+`r as.english(jam_interest_respondents)` responded to the question gauging interest (0 to 2) in a virtual Zoom jam, where 0 is no interest and 2 is a strong interest.
+
+
+```{r}
+jam_interest_by_member_type <- jams %>%
+  group_by(SurveyType) %>%
+  summarise(
+    Interest = mean(VirtualJamInterest, na.rm = TRUE)
+  ) %>%
+  ungroup()
+
+jam_interest_by_member_type %>%
+  ggplot(aes(x = SurveyType, fill = SurveyType)) +
+  geom_segment(aes(xend = SurveyType, 
+                   y = 0, 
+                   yend = Interest),
+               color = "dark gray") +
+  geom_point(aes(y = Interest),
+             fill = "blue",
+             size = 4, 
+             alpha = .7,
+             shape = 21) +
+  geom_hline(yintercept = 2) +
+  theme_minimal() +
+  theme(text = element_text(size = 18)) +
+  labs(
+    title = "Interest in a Virtual Jam",
+    x = "",
+    y = "Average Interest"
+  ) +
+  geom_label(
+    label = "Strong Interest ->",
+    x = 2.5,
+    y = 1.75,
+    label.padding = unit(0.25, "lines"),
+    label.size = 0.25,
+    color = "black",
+    fill = "#5DC863FF"
+  ) +
+    geom_label(
+    label = "<- No Interest",
+    x = 2.5,
+    y = .2,
+    label.padding = unit(0.25, "lines"),
+    label.size = 0.25,
+    color = "black",
+    fill = "#5DC863FF"
+  ) +
+  coord_flip() +
+  guides(fill = "none")
+
+```
 
 Comparing interest between members and non-members, most members had a strong interest, whereas non-members were more divided, but most were at least somewhat interested in a virtual jam.
 
 Encouragingly, there was `r jam_facilitator_definitely` respondent very interested in facilitating, and `r jam_facilitator_maybe` respondents somewhat interested in facilitating a jam.
 
-The ANA appreciates all the feedback regarding the current time slot for virtual jams and for the feedback regarding the Zoom jam held November 13, 2021. We commit to announcing upcoming virtual jams and working with volunteer facilitators. Please send feedback any time to [nyckelnotes@nyckelharpa.org](mailto:nyckelnotes@nyckelharpa.org). 
+The ANA appreciates all the feedback regarding the current time slot for virtual jams and for the feedback regarding the Zoom jam held November 13, 2021.  
 
-## Allspel Suggestions
-
-```{r}
-
-allspiel <- rbind(
-  general %>%
-    select(AllspielSuggestions,
-           SurveyType),
-  member %>%
-    select(AllspielSuggestions,
-           SurveyType)
-) 
-
-allspiel_responses <- allspiel %>% filter(!is.na(AllspielSuggestions))
-
-allspiel_respondents <- 
-  allspiel_responses  %>% nrow()
-
-```
-
-From `r allspiel_respondents` responses to the survey question asking for tune suggestions to add to the [Allspel list](http://www.nyckelharpa.org/archive/written-music/american-allspel-list/), the following tunes were noted:
-
-  * 1814
-  * Adventspolskan
-  * Bisonpolska
-  * Eklundapolska 1 & 3
-  * Elins Vals
-  * Femtolen
-  * Flickorna Svensson
-  * Hambo efter Carl Johan Krej
-  * Hommage til en Spelman
-  * Härjedalsschottis
-  * Juringius
-  * Karl XII Vals
-  * Kyrkpolska
-  * Langdans fran Solleron
-  * Polska efter Hugo Falk
-  * Ridmarsch efter Byss-Calle
-  * Schottis fr. Härjedalen
-  * Spelmansglädje
-  * Stures 80-år schottis
-  * Älvdalensbrudmarsch
-  * Äppelbo Gånglåt
-  * Österbypolska
-
-The ANA will review this list and make revisions as necessary.  
-
-## Virtual Workshop Feedback
+### Virtual Workshop 
 
 ```{r}
 workshop <- rbind(
@@ -646,14 +690,65 @@ workshop <- rbind(
            SurveyType)
 )
 
-workshop_interest <- mean(c(workshop$VirtualWorkshopInterest), na.rm = TRUE)
+workshop_interest <- workshop %>%
+  group_by(SurveyType) %>%
+  summarise(interest = 
+              mean(c(workshop$VirtualWorkshopInterest),
+                   na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(Denominator = 2)
+
 ```
 
-### Overall Interest
+#### Overall Interest
 
-Overall interest in a virtual workshop (however that is defined) on a scale from 0 (no interest) to 2 (strong interest), was an average of `r format(workshop_interest, digits = 3)`.
+Overall interest in virtual workshops on a scale from 0 (no interest) to 2 (strong interest) came out *exactly even* between members and non-members at an average of `r format(workshop_interest$interest[1], digits = 3)`.
 
-### Workshop Types
+```{r}
+
+workshop_interest %>%
+  ggplot(aes(x = SurveyType, fill = SurveyType)) +
+  geom_segment(aes(xend = SurveyType, 
+                   y = 0, 
+                   yend = interest),
+               color = "dark gray") +
+  geom_point(aes(y = interest),
+             fill = "blue",
+             size = 4, 
+             alpha = .7,
+             shape = 21) +
+  geom_hline(yintercept = 2) +
+  theme_minimal() +
+  theme(text = element_text(size = 18)) +
+  labs(
+    title = "Interest in a Virtual Workshop",
+    x = "",
+    y = "Average Interest"
+  ) +
+  geom_label(
+    label = "Strong Interest ->",
+    x = 2.5,
+    y = 1.75,
+    label.padding = unit(0.25, "lines"),
+    label.size = 0.25,
+    color = "black",
+    fill = "#5DC863FF"
+  ) +
+    geom_label(
+    label = "<- No Interest",
+    x = 2.5,
+    y = .2,
+    label.padding = unit(0.25, "lines"),
+    label.size = 0.25,
+    color = "black",
+    fill = "#5DC863FF"
+  ) +
+  coord_flip() +
+  guides(fill = "none")
+
+```
+
+#### Workshop Topics
 
 ```{r}
 
@@ -699,11 +794,11 @@ workshop_type_count <- workshop %>%
 workshop_types %>%
   mutate(Topics = fct_reorder(Topics, desc(value))) %>%
   ggplot(aes(x = Topics, y = value, fill = Topics)) +
-  geom_col() +
+  geom_col(alpha = .8) +
   theme_minimal() +
   theme(text = element_text(size = 18)) +
   labs(
-    title = "Workshop Interest",
+    title = "Workshop Topics of Interest",
     caption = paste(workshop_type_count,
                      "respondents selected multiple topics"),
     x = "",
@@ -726,7 +821,8 @@ workshop_types %>%
 ```
 <br>
 
-## Newsletter Feedback
+
+### Newsletter
 
 ```{r}
 
@@ -738,22 +834,64 @@ newsletter <- rbind(
     select(starts_with("Newsletter"),
            SurveyType)
 )
-newsletter_interest_count <- newsletter %>%
-  filter(!is.na(NewsletterInterest)) %>% nrow()
 
-newsletter_contributor_count <- newsletter %>%
-  filter(!is.na(NewsletterContributorInterest)) %>% nrow()
+newsletter_interest <- newsletter %>%
+  rowid_to_column() %>%
+  mutate( # had to assign responses into buckets manually
+    Receiving = case_when(
+      rowid %in% c(1:3, 5:8, 10:11, 13:20, 22:24, 27, 29:32, 34:37, 40:45, 50:53, 57:67, 69:72, 75:79) ~ "Yes",
+      rowid %in% c(25:26, 28, 33, 39, 46, 54:56, 68, 73) ~ "No",
+      TRUE ~ "Did not answer"),
+    Contributing = case_when(
+      rowid %in% c(2, 11, 14, 16, 19, 27, 35, 43, 59, 61, 62, 66, 67, 68, 69, 71, 77, 79) ~ "Yes",
+      rowid %in% c(45, 13, 41, 63, 32, 34, 57, 3, 28, 37, 78, 70, 21, 33) ~ "No",
+      TRUE ~ "Did not answer")
+    )
+
+newsletter_interest_receiving <- newsletter_interest %>%
+  count(SurveyType, Receiving)
+
+newsletter_interest_contributor <- newsletter_interest %>%
+  count(SurveyType, Contributing)
+
+newsletter_receiving <- newsletter_interest %>%
+  count(Receiving) %>%
+  adorn_percentages(denominator = "col") %>%
+  adorn_pct_formatting(digits = 0)
+```
+
+`r newsletter_receiving %>% filter(Receiving == "Yes") %>% pull(n)` of all respondents indicated an interest in receiving a regular ANA newsletter.
+
+```{r}
+
+newsletter_interest_receiving %>%
+  ggplot(aes(x = SurveyType, y = n, fill = Receiving)) +
+  geom_bar(stat = "identity", alpha = .8) +
+  scale_fill_viridis("", discrete = TRUE) +
+  theme_minimal() +
+  theme(text = element_text(size = 18)) +
+  labs(x = "", y = "", title = "Interest in Reading ANA Newsletter") 
 
 ```
-Newsletter Feedback
 
-There were `r newsletter_interest_count` respondents who indicated whether they were interested in reading an ANA newsletter, and `r newsletter_contributor_count` who indicated an interest in contributing to the creation of a newsletter.
+It was encouraging that there were `r sum(newsletter_interest_contributor %>% filter(Contributing == "Yes") %>% pull(n))` respondents who were interested in contributing content, layout and design services, and/or money toward its creation.
 
-An overview of the newsletter feedback brought out some interest, but many had concerns that it might become burdensome to create and distribute. However, it was encouraging that there were some who were interested in contributing content, layout and design services, and money toward its creation.
+```{r}
 
-## Membership Feedback
+newsletter_interest_contributor %>%
+  ggplot(aes(x = SurveyType, y = n, fill = Contributing)) +
+  geom_bar(stat = "identity", alpha = .8) +
+  scale_fill_viridis("", discrete = TRUE) +
+  theme_minimal() +
+  theme(text = element_text(size = 18)) +
+  labs(x = "", y = "", title = "Interest in Contributing to an ANA Newsletter") 
 
-### Membership Interest (from non-members)
+```
+
+
+### Membership 
+
+#### Membership Interest (from non-members)
 
 ```{r}
 
@@ -776,8 +914,25 @@ membership_interest_count <- membership %>%
 membership_benefits_count <- membership %>%
   filter(!is.na(MembershipBenefits)) %>% nrow()
 
-volunteer_interest_count <- membership %>%
-  filter(!is.na(VolunteerInterest)) %>% nrow()
+volunteer_interest <- membership %>%
+  select(VolunteerInterest, SurveyType) %>%
+  rownames_to_column() %>%
+  mutate(
+    Volunteer = case_when(
+      is.na(VolunteerInterest) ~ "No answer",
+      rowname %in% c(49, 14, 33) ~ "No",
+      TRUE ~ "Yes"))
+
+board_interest <- member %>%
+  select(FreeStyle) %>%
+  rownames_to_column() %>%
+  mutate(
+    BoardVolunteer = case_when(
+      is.na(FreeStyle) ~ "No answer",
+      rowname %in% c(6, 8, 17) ~ "Maybe",
+      TRUE ~ FreeStyle
+    )
+  )
 
 membership_interest <- membership %>%
   filter(!is.na(MembershipInterest) & 
@@ -795,13 +950,13 @@ membership_interest <- membership %>%
 
 ```
 
-Of the `r membership_interest_count` non-member respondents who answered this question, there was strong interest in ANA membership:
+Of the `r membership_interest_count` non-member respondents who answered this question, there was strong interest in [ANA membership](http://www.nyckelharpa.org/about/about-the-ana/become-a-member/). 
 
 ```{r}
 
 ggplot(membership_interest, 
        aes(x = MembershipInterest, y = n, fill = MembershipInterest)) +
-  geom_col() +
+  geom_col(alpha = .8) +
   scale_fill_viridis(discrete = TRUE) +
   theme_minimal() +
   theme(text = element_text(size = 18)) +
@@ -814,7 +969,8 @@ ggplot(membership_interest,
 
 ```
 
-### Membership Benefits
+
+#### Membership Benefits
 
 ```{r}
 benefits <- tribble(
@@ -830,10 +986,55 @@ benefits <- tribble(
 The question about membership benefits was interpreted broadly by the respondents who answered it. Here are some key takeaways:
 
   * Most felt like adding benefits to ANA membership was unnecessary
-  * ANA membership was associated with finding other players, access to content, information about events, and a few mentioned discounts
-  * Community and keeping the nyckelharpa as an instrument alive was an underlying theme
+  * Others associated membership benefits with finding other players, access to content, information about events, and a few people mentioned discounts
+  * Community and keeping the nyckelharpa alive was a common theme
 
-## Survey Feedback
+### Volunteering
+
+#### Volunteering Generally
+
+This question was asked of both members and non-members. Respondents who checked one or more of the options are counted as "Yes". The options given were:
+
+  * Newsletter design
+  * Newsletter content
+  * Website content
+  * Making videos to share on the website
+  * Surveys
+  * Media (collecting photos)
+  * Assisting at virtual jams
+  * Assisting at virtual workshops
+  * Social media
+
+```{r}
+
+volunteer_interest %>%
+  ggplot(aes(x = SurveyType, fill = Volunteer)) +
+  geom_bar(alpha = .8) +
+  scale_fill_viridis("", discrete = TRUE) +
+  theme_minimal() +
+  theme(text = element_text(size = 18)) +
+  labs(x = "", y = "", title = "Interest in Volunteering")
+
+```
+
+#### Board Volunteer (Member Survey Only)
+
+This question was only on the member survey. Any respondents that did not answer with a direct Yes/No/Maybe were counted as "Maybe."
+
+```{r}
+
+board_interest %>%
+  ggplot(aes(BoardVolunteer, fill = BoardVolunteer)) +
+  geom_bar(alpha = .8) +
+  scale_fill_viridis("Board\nVolunteer", discrete = TRUE) +
+  theme_minimal() +
+  theme(text = element_text(size = 18)) +
+  labs(x = "", y = "", title = "Interest in Serving on the ANA Board")
+
+```
+
+
+### Survey 
 
 ```{r}
 survey_feedback <- rbind(
@@ -850,8 +1051,16 @@ survey_feedback_count <- survey_feedback %>%
 
 ```
 
-`r str_to_sentence(as.english(survey_feedback_count))` respondents gave feedback on the survey itself, though the data analyst has some to add! The ANA appreciates all the wonderful feedback about the website given in the survey. More generally, your ideas and offers to volunteer have been noted. We will be posting a list of volunteer roles that are available soon, so keep a look out. If you would like to reach out to us, please email  [nyckelnotes@nyckelharpa.org](mailto:nyckelnotes@nyckelharpa.org).
+Thank you to the `r str_to_sentence(as.english(survey_feedback_count))` respondents who gave feedback on the survey itself. We will do our best to incorporate your suggestions into future surveys.
 
-So much thanks to everyone who participated and read all the way to the last of the analysis! Hope you enjoyed reading the results! <3
+## {-}
+
+# {-}
+
+---
+
+So much thanks to everyone who participated in the analysis! Be sure to click through the tabs above. The R code used to produce this analysis can be found on [GitHub](https://github.com/kiadso/nyck-survey).
+
+Please send feedback any time to [nyckelnotes@nyckelharpa.org](mailto:nyckelnotes@nyckelharpa.org). 
 
 
