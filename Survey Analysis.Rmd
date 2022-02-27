@@ -792,7 +792,14 @@ workshop_type_count <- workshop %>%
   nrow()
 
 workshop_types %>%
-  mutate(Topics = fct_reorder(Topics, desc(value))) %>%
+  mutate(Topics = case_when(
+           Topics == "Dancing" ~ "Playing for Dancing",
+           Topics == "Maintenance" ~ "Nyckelharpa Maintenance",
+           Topics == "TuneTypes" ~ "Tune types",
+           Topics == "Tunes" ~ "Learning tunes",
+           TRUE ~ Topics
+         ),
+         Topics = fct_reorder(Topics, desc(value))) %>%
   ggplot(aes(x = Topics, y = value, fill = Topics)) +
   geom_col(alpha = .8) +
   theme_minimal() +
@@ -807,9 +814,9 @@ workshop_types %>%
   geom_hline(aes(yintercept = workshop_type_count + 2)) +
   scale_fill_viridis(discrete = TRUE) +
   geom_label(
-    label = paste(workshop_type_count, "respondents"),
+    label = paste(workshop_type_count, "\nrespondents"),
     x = 4.1,
-    y = workshop_type_count + 1,
+    y = workshop_type_count - 4,
     label.padding = unit(0.25, "lines"),
     label.size = 0.25,
     color = "black",
