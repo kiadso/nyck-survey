@@ -1053,14 +1053,18 @@ survey_feedback <- rbind(
            SurveyType)
 )
 
-survey_feedback_count <- survey_feedback %>%
-  filter(!is.na(SurveyFeedback)) %>% nrow()
+survey_feedback_number <- survey_feedback %>%
+      filter(!is.na(SurveyFeedback)) %>% 
+      nrow()
+
+survey_feedback_word <- tolower(
+  as.english(survey_feedback_number))
+
 
 ```
 
-Thank you to the `r str_to_sentence(as.english(survey_feedback_count))` respondents who gave feedback on the survey itself. We will do our best to incorporate your suggestions into future surveys.
+Thank you to the `r paste0(survey_feedback_word, " (", survey_feedback_number, ")")` respondents who gave feedback on the survey itself. We will do our best to incorporate your suggestions into future surveys.
 
-## {-}
 
 # {-}
 
